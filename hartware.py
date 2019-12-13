@@ -4,7 +4,8 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def ut_as_list( dframe, diag=1, cols=['Row','Column','Value'] ):
@@ -114,7 +115,7 @@ def violin_by_quantile( data, data_label, group, group_label, num_quantiles=4, f
     # eg
     # violin_by_quantile( bf['ERBB2'], 'ERBB2 BF', expr['ERBB2'], 'ERBB2 expr', num_quantiles=12, figsize=(8,4), rot=0)
     #
-    q = linspace(0,1,num_quantiles+1)
+    q = np.linspace(0,1,num_quantiles+1)
     mydf = data.to_frame(name=data_label).join( group.to_frame(name=group_label), how='inner')
     mydf[group_label + ' quantiles'] = pd.qcut( mydf[group_label], q, labels=range(1,num_quantiles+1) )
     fig, ax=plt.subplots()
