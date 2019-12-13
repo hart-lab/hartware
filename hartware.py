@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib as pl
+import matplotlib as plt
 
 
 def ut_as_list( dframe, diag=1, cols=['Row','Column','Value'] ):
@@ -84,6 +84,44 @@ def clean_axis(ax):
     ax.get_yaxis().set_ticks([])
     for sp in ax.spines.values():
         sp.set_visible(False)
+
+########################################################
+# plotting tools for connecting and viewing dataframes #
+########################################################
+
+
+
+def violin_by_group( data, data_label, group, group_label, figsize=(4,4), rot=0):
+    #
+    # pass slice (data, group; can be from two different dfs with same index), build df, and build sns.violin
+    #
+    # eg
+    # violin_by_group( bf['KRAS'], 'KRAS BF', gof['KRAS'], 'KRAS mutation')
+    # where bf = (genes x cells) BF matrix and gof = (genes x cells) category matrix (GOF or WT)
+    #
+    mydf = data.to_frame(name=data_label).join( group.to_frame(name=group_label), how='inner')
+    fig, ax=plt.subplots()
+    fig.set_size_inches(figsize)
+    g = sns.violinplot(data=mydf, y=data_label, x=group_label, ax=ax)
+    g.set_xticklabels(g.get_xticklabels(), rotation=rot)
+
+
+
+def violin_by_quantile( data, data_label, group, group_label, num_quantiles=4, figsize=(4,4), rot=0):
+    #
+    # pass slice (data, group), build df, label quantiles, groupby quantile labels, and plot
+    #
+    # eg
+    # violin_by_quantile( bf['ERBB2'], 'ERBB2 BF', expr['ERBB2'], 'ERBB2 expr', num_quantiles=12, figsize=(8,4), rot=0)
+    #
+    q = linspace(0,1,num_quantiles+1)
+    mydf = data.to_frame(name=data_label).join( group.to_frame(name=group_label), how='inner')
+    mydf[group_label + ' quantiles'] = pd.qcut( mydf[group_label], q, labels=range(1,num_quantiles+1) )
+    fig, ax=plt.subplots()
+    fig.set_size_inches(figsize)
+    g = sns.violinplot(data=mydf, y=data_label, x=group_label + ' quantiles', ax=ax)
+    g.set_xticklabels(g.get_xticklabels(), rotation=rot)
+
 
 
 ###############################
