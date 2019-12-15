@@ -128,7 +128,7 @@ def scatter_with_density( x, y):
     z = stats.gaussian_kde(xy)(xy)
     idx = z.argsort()
     x, y, z = x[idx], y[idx], z[idx]
-    fig, ax = pyplot.subplots( figsize=(6,6))
+    fig, ax = plt.subplots( figsize=(6,6))
     ax.scatter(x, y, c=z, s=50, edgecolor='', cmap='jet')
     plt.show()
 
