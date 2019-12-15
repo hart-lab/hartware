@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -70,9 +71,7 @@ def generate_correlation_map_df(x, y):
         raise ValueError('X and Y must have the same number of columns.')
     s_x = x.std(1, ddof=n - 1)
     s_y = y.std(1, ddof=n - 1)
-    cov = np.dot(x,
-                 y.T) - n * np.dot(mu_x[:, np.newaxis],
-                                  mu_y[np.newaxis, :])
+    cov = np.dot(x, y.T) - n * np.dot(mu_x[:, np.newaxis], mu_y[np.newaxis, :])
     corrmatrix = cov / np.dot(s_x[:, np.newaxis], s_y[np.newaxis, :])
     outframe = pd.DataFrame( index=x.index.values, columns=y.index.values, data=corrmatrix)
     return outframe
@@ -124,6 +123,14 @@ def violin_by_quantile( data, data_label, group, group_label, num_quantiles=4, f
     g.set_xticklabels(g.get_xticklabels(), rotation=rot)
 
 
+def scatter_with_density( x, y):
+    xy = np.vstack([x,y])
+    z = stats.gaussian_kde(xy)(xy)
+    idx = z.argsort()
+    x, y, z = x[idx], y[idx], z[idx]
+    fig, ax = pyplot.subplots( figsize=(6,6))
+    ax.scatter(x, y, c=z, s=50, edgecolor='', cmap='jet')
+    plt.show()
 
 ###############################
 # SOME USEFUL COLOR GRADIENTS #
