@@ -10,18 +10,20 @@ import seaborn as sns
 
 
 def ut_as_list( dframe, diag=1, cols=['Row','Column','Value'] ):
-	"""
-	for a symmetric dataframe, where cols=rows, get the upper triangle as a list of row/column pairs
-	diag = 1 (default): ignore diagonal
-	diag = 0: include diagonal
-	"""
-	if (dframe.index.name == dframe.columns.name):
-		dframe.index.name = dframe.index.name + '.1'
-		dframe.index.name = dframe.index.name + '.2'
-	d = dframe.where( np.triu( np.ones( dframe.shape ), k=diag).astype(np.bool))
-	d = d.stack().reset_index()
-	d.columns=cols
-	return d
+  """
+  for a symmetric dataframe, where cols=rows, get the upper triangle as a list of row/column pairs
+  diag = 1 (default): ignore diagonal
+  diag = 0: include diagonal
+  """
+  #if (dframe.index.name == dframe.columns.name):
+  dframe.index.name = cols[0]
+  dframe.columns.name = cols[1]
+  #		dframe.index.name = dframe.index.name + '.1'
+  #		dframe.index.name = dframe.index.name + '.2'
+  d = dframe.where( np.triu( np.ones( dframe.shape ), k=diag).astype(np.bool))
+  d = d.stack().reset_index()
+  d.columns=cols
+  return d
 
 def qnorm_dataframe( data ):
 	"""
@@ -76,19 +78,37 @@ def generate_correlation_map_df(x, y):
     outframe = pd.DataFrame( index=x.index.values, columns=y.index.values, data=corrmatrix)
     return outframe
 
-def clean_axis(ax):
-	#
-	# for use, e.g., when plotting a dendrogram alongside a heatmap. removes border on a frame.
-	#
-    ax.get_xaxis().set_ticks([])
-    ax.get_yaxis().set_ticks([])
-    for sp in ax.spines.values():
-        sp.set_visible(False)
+###############################################################
+# tools for calculating and manipulating partial correlations #
+###############################################################
+
+def partial(x,y,z,cc):
+    #
+    # x, y, z = gene (row/column) names
+    # cc = dataframe; symmetric matrix of pearson correlations
+    #
+    pxy = cc.loc[x,y]
+    pxz = cc.loc[x,z]
+    pyz = cc.loc[y,z]
+    pxy_z = (pxy - pxz*pyz) / (np.sqrt(1-pxz**2) * np.sqrt(1-pyz**2) )
+    return pxy_z
+
+def get_all_partials( g1, g2, cc):
+    pxy = cc.loc[g1][g2]
+    pxy_vect = np.array( list([pxy])*(cc.shape[0]) ) #vector
+    pxz = cc.loc[g1]                              #vector
+    pyz = cc.loc[g2]                              #vector
+    pxy_all = (pxy_vect -  np.multiply(pxz, pyz)) / ( np.sqrt( 1-pxz**2) * np.sqrt( 1-pyz**2) )
+    framename = 'pc_' + g1 + '_' + g2
+    pxy_all = pxy_all.to_frame(framename)
+    pxy_all.drop( [g1, g2], axis=0, inplace=True) # don't include these!
+    pxy_all['ratio'] = pxy_all[framename]**2 / pxy**2
+    pxy_all.sort_values('ratio', ascending=True, inplace=True)
+    return pxy_all
 
 ########################################################
 # plotting tools for connecting and viewing dataframes #
 ########################################################
-
 
 
 def violin_by_group( data, data_label, group, group_label, figsize=(4,4), rot=0):
@@ -131,6 +151,16 @@ def scatter_with_density( x, y):
     fig, ax = plt.subplots( figsize=(6,6))
     ax.scatter(x, y, c=z, s=50, edgecolor='', cmap='jet')
     plt.show()
+
+
+def clean_axis(ax):
+    #
+    # for use, e.g., when plotting a dendrogram alongside a heatmap. removes border on a frame.
+    #
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
+    for sp in ax.spines.values():
+        sp.set_visible(False)
 
 ###############################
 # SOME USEFUL COLOR GRADIENTS #
