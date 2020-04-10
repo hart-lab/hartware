@@ -25,6 +25,10 @@ def ut_as_list( dframe, diag=1, cols=['Row','Column','Value'] ):
   d.columns=cols
   return d
 
+def ut_as_values( dframe, diag=1):
+  array_of_ut_values = dframe.where( np.triu( np.ones( dframe.shape ), k=1).astype(np.bool)).stack().values
+  return array_of_ut_values
+
 def qnorm_dataframe( data ):
 	"""
 	quantile normalize a dataframe with numeric values only!
