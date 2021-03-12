@@ -16,11 +16,13 @@ def ut_as_list( dframe, diag=1, cols=['Row','Column','Value'] ):
   diag = 0: include diagonal
   """
   #if (dframe.index.name == dframe.columns.name):
-  dframe.index.name = cols[0]
-  dframe.columns.name = cols[1]
+  #dframe.index.name = cols[0]
+  #dframe.columns.name = cols[1]
   #		dframe.index.name = dframe.index.name + '.1'
   #		dframe.index.name = dframe.index.name + '.2'
   d = dframe.where( np.triu( np.ones( dframe.shape ), k=diag).astype(np.bool))
+  d.index.rename(cols[0], inplace=True)
+  d.columns.rename(cols[1], inplace=True)
   d = d.stack().reset_index()
   d.columns=cols
   return d
