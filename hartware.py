@@ -116,6 +116,19 @@ def get_all_partials( g1, g2, cc):
 # plotting tools for connecting and viewing dataframes #
 ########################################################
 
+def get_density_for_scatter( x, y ):
+    #
+    # for scatterplots colored by density. pass x, y coordinate lists.
+    # calculates 2d kde of (x,y) and reorders x and y by density (z)
+    # returns x, y, z (ordered)
+    # 
+    # a subsequent scatter( x, y, c=z ) will plot points by density
+    #
+    xy = np.vstack( [x,y] )
+    z  = stats.gaussian_kde( xy )( xy )
+    idx = z.argsort()
+    return x[idx], y[idx], z[idx]
+
 
 def violin_by_group( data, data_label, group, group_label, figsize=(4,4), rot=0):
     #
