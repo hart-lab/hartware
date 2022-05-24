@@ -89,9 +89,9 @@ def cholesky_covariance_warp(df):
      by samples (columns) dataframe.
     returns a dataframe with the same index and columns.
     """
-    cholsigmainv = np.linalg.cholesky(np.linalg.pinv(np.cov(Z.T)))
-    warped_screens = Z.values @ cholsigmainv
-    Z_chol = pd.DataFrame( warped_screens , index=Z.index.values, columns=Z.columns.values)
+    cholsigmainv = np.linalg.cholesky(np.linalg.pinv(np.cov(df.T)))
+    warped_screens = df.values @ cholsigmainv
+    Z_chol = pd.DataFrame( warped_screens , index=df.index.values, columns=df.columns.values)
     return Z_chol
 
 
