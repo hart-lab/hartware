@@ -41,7 +41,6 @@ def qnorm_dataframe( data ):
 	qnormed_data    = data.rank(method='min').stack().astype(int).map(rank_mean).unstack()
 	return qnormed_data
 
-
 def qnorm_array(anarray):
 	"""
 	anarray where rows=genes and columns=samples
@@ -84,11 +83,24 @@ def generate_correlation_map_df(x, y):
     outframe = pd.DataFrame( index=x.index.values, columns=y.index.values, data=corrmatrix)
     return outframe
 
+def cholesky_covariance_warp(df):
+    """
+    Perform cholesky decomposition and "covariance warping" on a genes (rows) 
+     by samples (columns) dataframe.
+    returns a dataframe with the same index and columns.
+    """
+    cholsigmainv = np.linalg.cholesky(np.linalg.pinv(np.cov(Z.T)))
+    warped_screens = Z.values @ cholsigmainv
+    Z_chol = pd.DataFrame( warped_screens , index=Z.index.values, columns=Z.columns.values)
+    return Z_chol
+
+
+
 ###############################################################
 # tools for calculating and manipulating partial correlations #
 ###############################################################
 
-def partial(x,y,z,cc):
+def get_partial(x,y,z,cc):
     #
     # x, y, z = gene (row/column) names
     # cc = dataframe; symmetric matrix of pearson correlations
@@ -111,6 +123,26 @@ def get_all_partials( g1, g2, cc):
     pxy_all['ratio'] = pxy_all[framename]**2 / pxy**2
     pxy_all.sort_values('ratio', ascending=True, inplace=True)
     return pxy_all
+
+def get_partial_recursive(x,y,z,cc):
+    """ 
+    Get Partial correlation of x,y with respect to a list of elements z
+    where x and y are rows in cc
+    and z is a list of rows in cc (exclusive of x, y)
+
+    if z is 1 gene, just call get_partial. otherwise recursively calculates partial.
+    """
+    if (len(z) == 1):
+        pxy_z = get_partial( x, y, z[0], cc)
+    else:
+        Z0 = z[0]
+        Zother = z[1:]
+        Pxy_Zother = get_partial_recursive(x, y, Zother, cc)
+        PxZ0_b = get_partial_recursive(x, Z0, Zother, cc)
+        PyZ0_b = get_partial_recursive(y, Z0, Zother, cc)
+        pxy_z = ( Pxy_Zother - (PxZ0_b)*(PyZ0_b) ) / ( np.sqrt( 1-PxZ0_b**2) * np.sqrt( 1-PyZ0_b**2))
+    return pxy_z
+
 
 ########################################################
 # plotting tools for connecting and viewing dataframes #
@@ -144,8 +176,6 @@ def violin_by_group( data, data_label, group, group_label, figsize=(4,4), rot=0)
     g = sns.violinplot(data=mydf, y=data_label, x=group_label, ax=ax)
     g.set_xticklabels(g.get_xticklabels(), rotation=rot)
 
-
-
 def violin_by_quantile( data, data_label, group, group_label, num_quantiles=4, figsize=(4,4), rot=0):
     #
     # pass slice (data, group), build df, label quantiles, groupby quantile labels, and plot
@@ -161,7 +191,6 @@ def violin_by_quantile( data, data_label, group, group_label, num_quantiles=4, f
     g = sns.violinplot(data=mydf, y=data_label, x=group_label + ' quantiles', ax=ax)
     g.set_xticklabels(g.get_xticklabels(), rotation=rot)
 
-
 def scatter_with_density( x, y):
     xy = np.vstack([x,y])
     z = stats.gaussian_kde(xy)(xy)
@@ -170,7 +199,6 @@ def scatter_with_density( x, y):
     fig, ax = plt.subplots( figsize=(6,6))
     ax.scatter(x, y, c=z, s=50, edgecolor='', cmap='jet')
     plt.show()
-
 
 def clean_axis(ax):
     #
